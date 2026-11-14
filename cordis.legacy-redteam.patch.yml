@@ -1,0 +1,47 @@
+# dsh-purge —— 旧版独立红队包停用层（可选叠加层，默认不挂）
+#
+# 【什么时候需要】
+#   你以前装过下面这些独立红队包，并且还留在 profile 的 bundles 里：
+#       dsh-redteam-store      （npm 已 404，包下架）
+#       dsh-redteam-ui         （npm 已 404，包下架）
+#       dsh-redteam-mode       （npm 仍有 0.14.0）
+#       dsh-redteam-mode/store
+#       dsh-redteam-mode/ui
+#   1.1.71 起演练台（redteam）已经整个收进本插件（lib/redteam），
+#   旧包和本插件同时挂会重复注册工具与 UI。
+#
+# 【为什么不在 cordis.patch.yml 里直接写】
+#   DSH 的 patch 语义是「目标 entry 不在树里就告警并跳过」。这 5 行对
+#   没装过旧包的人永远是空目标，每次启动刷 5 条
+#       dsh: [dsh-purge] patch: entry "redteam-mode" not found
+#   所以它们被拆成独立叠加层：只有你确实还留着旧包时才挂。
+#
+# 【怎么挂】
+#   dsh web --patch <插件目录>/cordis.legacy-redteam.patch.yml
+#   dsh tui --patch <插件目录>/cordis.legacy-redteam.patch.yml
+#   桌面端（Electron 独占 profile）请把本文件内容并进
+#   ~/.dsh/profiles/<profile>/cordis.patch.yml 的用户层。
+#
+# 【更省事】
+#   旧包如果已经不用了，直接把它们从 profile 的 package.json bundles
+#   里摘掉更干净 —— 本层就不用挂了。
+
+- id: redteam-store
+  name: dsh-redteam-store
+  disabled: true
+
+- id: redteam-ui
+  name: dsh-redteam-ui
+  disabled: true
+
+- id: redteam-mode
+  name: dsh-redteam-mode
+  disabled: true
+
+- id: redteam-mode-store
+  name: dsh-redteam-mode/store
+  disabled: true
+
+- id: redteam-mode-ui
+  name: dsh-redteam-mode/ui
+  disabled: true
