@@ -51,11 +51,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/XunYi1018/dsh-purge.git"
+    "url": "git+https://github.com/XunYi1018/Trace.git"
   },
-  "homepage": "https://github.com/XunYi1018/dsh-purge#readme",
+  "homepage": "https://github.com/XunYi1018/Trace#readme",
   "bugs": {
-    "url": "https://github.com/XunYi1018/dsh-purge/issues"
+    "url": "https://github.com/XunYi1018/Trace/issues"
   },
   "dsh": {
     "bundle": {
@@ -73,9 +73,9 @@
     },
     "install": {
       "preferred": "tarball",
-      "tarball": "https://github.com/XunYi1018/dsh-purge/archive/refs/heads/main.tar.gz",
-      "zip": "https://github.com/XunYi1018/dsh-purge/archive/refs/heads/main.zip",
-      "git": "https://github.com/XunYi1018/dsh-purge.git"
+      "tarball": "https://github.com/XunYi1018/Trace/archive/refs/heads/main.tar.gz",
+      "zip": "https://github.com/XunYi1018/Trace/archive/refs/heads/main.zip",
+      "git": "https://github.com/XunYi1018/Trace.git"
     }
   },
   "peerDependencies": {
