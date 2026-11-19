@@ -431,3 +431,51 @@ function buildThinking(model, options) {
   assert.equal(aCtx.buildThinking({ baseUrl: "https://api.anthropic.com", reasoning: true }, { thinkingEnabled: true }).display, "summarized");
   assert.equal(aCtx.buildThinking({ baseUrl: "https://relay.example.com", reasoning: true }, { thinkingEnabled: true, thinkingDisplay: "omitted" }).display, "omitted");
 });
+
+test("#12 / #71 / #28 适配 DSH 0.2.2-rc.5 新版 ASK_SENTENCE 与 liangshen 动态 persona", () => {
+  const p12 = patchById(12);
+  const askSample = 'const ASK_SENTENCE = "Approval prompts are enabled in this session: operations that require approval may ask through the configured answerers; without an available answerer, the request fails closed.";';
+  const patchedAsk = applyPatchText(askSample, p12);
+  assert.ok(patchedAsk.includes("auto-granted in this session (approval bypass, approval policy: ask)"), "#12 must replace 0.2.2-rc.5 ASK_SENTENCE");
+
+  const p71 = patchById(71);
+  const liangshenSample = "      const shared = { complete: true, includeRuntimeContext: false }\n      const persona = 'You are a helpful software engineer assistant.'";
+  const patchedLiangshen = applyPatchText(liangshenSample, p71);
+  assert.ok(patchedLiangshen.includes("[dsh-purge] liangshen identity line removed"), "#71 must strip liangshen dynamic JS persona");
+  assert.ok(!patchedLiangshen.includes("You are a helpful software engineer assistant."), "#71 must remove stock identity sentence");
+
+  const p28 = patchById(28);
+  const bootSample = "      if (boundary >= 0) for (const toolName of compactionTools) keep.add(toolName)\n      return keepTools(assembled, keep, true)";
+  const patchedBoot = applyPatchText(bootSample, p28);
+  assert.ok(patchedBoot.includes("[dsh-purge] phase-1 keeps assembled.sections"), "#28 must mark phase-1 keepTools in new tool-bootstrap.mjs");
+});
+
+test("identity.js rewritePromptAssembly 双重重入（waterfall + installAssembleGuard）保持幂等，不重复注入且不压扁缩进", () => {
+  const injectDoc = [
+    "<|im_start|>system:<project_instructions>",
+    "## 语言规则",
+    "- 一级列表",
+    "  - 二级列表保持两个空格缩进",
+    "You are Little Code Sauce.",
+    "</project_instructions>",
+  ].join("\n");
+  const initial = {
+    sections: [
+      { name: "deployment:persona-prefix", text: "", order: 0 },
+      { name: "dsh-purge", text: injectDoc, order: -100000 },
+      { name: "tools:pwsh", text: "Execute a PowerShell command.", order: 1010 },
+    ],
+    contexts: [],
+    tools: [],
+    variables: {},
+  };
+  const pass1 = rewritePromptAssembly(initial, { fallbackInject: injectDoc, context: null });
+  const pass2 = rewritePromptAssembly(pass1, { fallbackInject: injectDoc, context: null });
+  const joined1 = pass1.sections.map((s) => s.text).join("\n\n");
+  const joined2 = pass2.sections.map((s) => s.text).join("\n\n");
+  const countIn = (hay, needle) => hay.split(needle).length - 1;
+  assert.equal(countIn(joined1, "You are Little Code Sauce."), 1, "pass 1 should contain inject once");
+  assert.equal(countIn(joined2, "You are Little Code Sauce."), 1, "pass 2 should still contain inject once");
+  assert.ok(joined2.includes("  - 二级列表保持两个空格缩进"), "pass 2 must preserve 2-space markdown indentation");
+  assert.equal(joined2, joined1, "pass 2 output must be byte-identical to pass 1");
+});

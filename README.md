@@ -1,10 +1,15 @@
-# dsh-purge（`1.1.84-local.1`）
+# dsh-purge（`1.1.85`）
 
-面向 **DeepSeek Harness (`0.2.0-rc.2 / 0.2.1-rc.2 / 0.2.2-rc.3`)** 的宿主策略清洗、提示词注入、多协议/新模型适配与红队演练台维护版插件（支持官方桌面端 `desktop`、官方 Web 端 `web` 及终端 `dsh-tui`）。
+面向 **DeepSeek Harness (`0.2.0-rc.2 / 0.2.1-rc.2 / 0.2.2-rc.5`)** 的宿主策略清洗、提示词注入、多协议/新模型适配与红队演练台维护版插件（支持官方桌面端 `desktop`、官方 Web 端 `web` 及终端 `dsh-tui`）。
 
 ---
 
-## 核心升级与增强（基于 `1.1.84` + `#104`–`#114`）
+## 核心升级与增强（`1.1.85` · 适配 `0.2.2-rc.5` + `#104`–`#114`）
+
+### 0. `1.1.85` 升级维护（DeepSeek Harness `0.2.2-rc.5` 适配与重入去重修复）
+- **修复 `identity.js` 双重重入导致 `prompt-inject.md` 双份注入与缩进压扁 Bug**：`SystemPrompt.assemble()` 先经 `system-prompt/assemble` 瀑布执行一次 `rewritePromptAssembly`（将 `injectText` 折入 `deployment:persona-prefix`），随后外层 `installAssembleGuard` 对返回值二次调用 `rewritePromptAssembly`。旧逻辑在第 2 次进入时对 `deployment:persona-prefix` 执行了 `stripHarnessPersona()`，将其中的 2+ 连续空格压成单空格，导致 `prior.includes(inject)` 失配并把整份 `prompt-inject.md` 又拼了一遍。现新增 `peelFoldedInject()` 在清洗前剥离已折入的 `injectText`，保证多次重入 **100% 幂等且零格式损耗**。
+- **#12 `APPROVAL_ASK_SENTENCE_BYPASS` 适配 `0.2.2-rc.5`**：补充匹配 `0.2.2-rc.5` 新版 `dsh-user-approval` 的 `ASK_SENTENCE`（`"Approval prompts are enabled in this session: operations that require approval may ask through the configured answerers; without an available answerer, the request fails closed."`）。
+- **#71 `LIANGSHEN_IDENTITY_LINE` & #28 `LIANGSHEN_PHASE1_KEEP_INJECT` & #80 `MINIMAL_OFFICIAL_TOOLSET`**：适配新版 `liangshen/agent.cordis.yml` 的 `!!js` 动态 `persona` 变量与 `tool-bootstrap.mjs` 的 `keepTools` 结构，补齐 `#80` `softSettle`，达成本机 **95/95 applied（0 pending, 0 skipped）**。
 
 ### 1. 隐私保护与遥测剥离（`#49` / `#104`–`#106`）
 - **#49 `ANTHROPIC_OAUTH_CLI_NEUTRAL`**：将 Anthropic OAuth `user-agent` 改为中性 `anthropic-typescript`，消除早先伪装 UA 中包含 `dsh-purge` 字样的自曝风险，并支持逆序无损还原。
